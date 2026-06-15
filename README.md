@@ -91,9 +91,9 @@ aws eks update-kubeconfig --region "$AWS_REGION" --name "$CLUSTER_NAME"
 - The first step is to create an OIDC identity provider for your cluster in IAM. This establishes a trust relationship, allowing IAM to accept identity tokens from your Kubernetes cluster’s OIDC provider. eksctl makes this a one-step process:
 ```bash
 eksctl utils associate-iam-oidc-provider \
---region "$AWS_REGION" \
---cluster "$CLUSTER_NAME" \
---approve
+  --region "$AWS_REGION" \
+  --cluster "$CLUSTER_NAME" \
+  --approve
 ```
 
 ### Craft a least-privilege IAM policy
@@ -185,8 +185,7 @@ kubectl -n kube-system get sa cluster-autoscaler -o yaml
 - You should see an annotation like this, which is the magic that links Kubernetes to IAM:
 ```bash
 annotations:
-eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/eksctl-
-interview-ca-cluster-addon-iamserviceac-Role1-ABCDEFGHIJKL
+  eks.amazonaws.com/role-arn: arn:aws:iam::123456789012:role/eksctl-interview-ca-cluster-addon-iamserviceac-Role1-ABCDEFGHIJKL
 ```
 
 ### Step 5: Install the CA via Helm
@@ -199,18 +198,18 @@ helm repo update
 - Now, we’ll install the chart. The parameters we pass via --set are crucial for a correct and secure installation.
 ```bash
 helm upgrade --install cluster-autoscaler autoscaler/cluster-autoscaler \
---namespace kube-system \
---set nameOverride=aws-cluster-autoscaler \
---set cloudProvider=aws \
---set awsRegion="$AWS_REGION" \
---set autoDiscovery.clusterName="$CLUSTER_NAME" \
---set expander=least-waste \
---set rbac.serviceAccount.create=false \
---set rbac.serviceAccount.name=cluster-autoscaler \
---set extraArgs.balance-similar-node-groups=true \
---set extraArgs.scale-down-unneeded-time=5m \
---set extraArgs.skip-nodes-with-local-storage=false \
---set extraArgs.skip-nodes-with-system-pods=false
+  --namespace kube-system \
+  --set nameOverride=aws-cluster-autoscaler \
+  --set cloudProvider=aws \
+  --set awsRegion="$AWS_REGION" \
+  --set autoDiscovery.clusterName="$CLUSTER_NAME" \
+  --set expander=least-waste \
+  --set rbac.serviceAccount.create=false \
+  --set rbac.serviceAccount.name=cluster-autoscaler \
+  --set extraArgs.balance-similar-node-groups=true \
+  --set extraArgs.scale-down-unneeded-time=5m \
+  --set extraArgs.skip-nodes-with-local-storage=false \
+  --set extraArgs.skip-nodes-with-system-pods=false
 ```
 - Let’s highlight the most important settings for an IRSA-based setup:
   - autoDiscovery.clusterName="$CLUSTER_NAME": This tells the autoscaler which owner-ship tag to look for when discovering node groups.
