@@ -1,6 +1,6 @@
 # Deploying the Cluster Autoscaler on AWS EKS
 
-<img width="834" height="369" alt="Screenshot 2026-06-15 at 10 39 31 AM" src="https://github.com/user-attachments/assets/c46db163-0f1a-4969-a048-a5a3ff72d40e" />
+  <img width="834" height="369" alt="Screenshot 2026-06-15 at 10 39 31 AM" src="https://github.com/user-attachments/assets/c46db163-0f1a-4969-a048-a5a3ff72d40e" />
 
 ### Plan: What we’ll build and why
 - We will configure CA on an Amazon EKS cluster, using IRSA for secure, password-free authentication. This setup ensures that when Pods cannot be scheduled due to resource shortages, the
@@ -14,5 +14,30 @@
   - Proof of work: Trigger a scale-up event by deploying a workload that exceeds our cluster’s capacity and watch the logs to confirm the CA is making intelligent decisions.
   - Troubleshooting: Discuss common failure modes and how to quickly diagnose them — a key skill for any operational role.
 
-<img width="833" height="450" alt="Screenshot 2026-06-15 at 10 38 36 AM" src="https://github.com/user-attachments/assets/e4f977b1-a8fb-46d4-81c8-e53fce0fe322" />
+  <img width="833" height="450" alt="Screenshot 2026-06-15 at 10 38 36 AM" src="https://github.com/user-attachments/assets/e4f977b1-a8fb-46d4-81c8-e53fce0fe322" />
+
+### Step 1: Prepping the environment and cluster
+- Before we create the cluster, we’ll set up some environment variables to make our commandsclean and reusable. This is also a good practice to demonstrate in an interview, as it shows you value consistency and avoid manual errors.
+- First, we define our cluster’s name, region, and AWS account ID. We then programmatically detect the latest supported Kubernetes version for EKS in our target region. This is a robust approach that avoids hardcoding versions, though we include a safe fallback.
+```bash
+set -Eeuo pipefail
+# Basic context for our cluster
+export CLUSTER_NAME="interview-ca-cluster"
+export AWS_REGION="us-east-1"
+export AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account
+--output text)"
+```
+```bash
+# Discover the latest supported Kubernetes version for EKS
+export EKS_LATEST_VERSION="$( aws eks describe-addon-versions
+--region "$AWS_REGION"
+--query 'addons[].compatibilities[].clusterVersion'
+--output text | tr '\t' '\n' | sort -uV | tail -1 || true )"
+```
+```bash
+# Fallback to a recent version if discovery fails
+: "${EKS_LATEST_VERSION:=1.33}"
+echo "Using: Account=$AWS_ACCOUNT_ID Region=$AWS_REGION Cluster=$CLUSTER_
+NAME K8s=$EKS_LATEST_VERSION"
+```
 
