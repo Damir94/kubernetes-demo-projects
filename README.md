@@ -1,4 +1,3 @@
-
 # Deploying the Cluster Autoscaler on AWS EKS
 
   <img width="834" height="369" alt="Screenshot 2026-06-15 at 10 39 31 AM" src="https://github.com/user-attachments/assets/c46db163-0f1a-4969-a048-a5a3ff72d40e" />
