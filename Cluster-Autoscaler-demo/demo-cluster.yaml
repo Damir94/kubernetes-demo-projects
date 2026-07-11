@@ -1,18 +1,18 @@
 apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 metadata:
-name: ${CLUSTER_NAME}
-region: ${AWS_REGION}
-version: "${EKS_LATEST_VERSION}"
+  name: demo-cluster
+  region: us-east-1
+  version: "1.33"
 managedNodeGroups:
-- name: managed-ng-1
-minSize: 1
-desiredCapacity: 1
-maxSize: 5
-instanceType: t3.medium
-volumeSize: 20
-labels: { role: worker }
-# Required tags for Cluster Autoscaler autodiscovery
-tags:
-k8s.io/cluster-autoscaler/enabled: "true"
-k8s.io/cluster-autoscaler/${CLUSTER_NAME}: "owned"
+  - name: managed-ng-1
+    instanceType: t3.medium
+    minSize: 1
+    desiredCapacity: 1
+    maxSize: 5
+    volumeSize: 20
+    labels:
+      role: worker
+    tags:
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/${CLUSTER_NAME}: "owned"
