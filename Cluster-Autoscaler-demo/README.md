@@ -25,15 +25,11 @@ set -Eeuo pipefail
 # Basic context for our cluster
 export CLUSTER_NAME="interview-ca-cluster"
 export AWS_REGION="us-east-1"
-export AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account
---output text)"
+export AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
 ```
 ```bash
 # Discover the latest supported Kubernetes version for EKS
-export EKS_LATEST_VERSION="$( aws eks describe-addon-versions
---region "$AWS_REGION"
---query 'addons[].compatibilities[].clusterVersion'
---output text | tr '\t' '\n' | sort -uV | tail -1 || true )"
+export EKS_LATEST_VERSION="$( aws eks describe-addon-versions --region "$AWS_REGION" --query 'addons[].compatibilities[].clusterVersion' --output text | tr '\t' '\n' | sort -uV | tail -1 || true)"
 ```
 ```bash
 # Fallback to a recent version if discovery fails
