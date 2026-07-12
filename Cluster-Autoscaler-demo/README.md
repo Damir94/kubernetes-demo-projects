@@ -75,6 +75,9 @@ k8s.io/cluster-autoscaler/${CLUSTER_NAME}: "owned"
 ```bash
 eksctl create cluster -f ./demo-cluster.yaml
 ```
+
+<img width="1140" height="76" alt="Screenshot 2026-07-12 at 11 24 23 AM" src="https://github.com/user-attachments/assets/e2385eb4-7621-434f-bd11-ceda2bab424f" />
+
 - Once the cluster is ready, we’ll configure kubectl to communicate with it:
 ```bash
 aws eks update-kubeconfig --region "$AWS_REGION" --name "$CLUSTER_NAME"
@@ -91,6 +94,8 @@ eksctl utils associate-iam-oidc-provider \
   --cluster "$CLUSTER_NAME" \
   --approve
 ```
+
+<img width="1306" height="73" alt="Screenshot 2026-07-12 at 11 29 08 AM" src="https://github.com/user-attachments/assets/851d4960-cfd0-4dcf-b96d-2c34f6e90da6" />
 
 ### Craft a least-privilege IAM policy
 - Next, we’ll create an IAM policy that grants the CA only the permissions it needs. A common mistake is to grant overly broad permissions ("Resource": "*" everywhere). A stronger, more secure policy limits powerful actions to only the resources that are tagged for autoscaling.
@@ -170,6 +175,8 @@ eksctl create iamserviceaccount
 --override-existing-serviceaccounts
 ```
 
+<img width="1341" height="266" alt="Screenshot 2026-07-12 at 11 36 15 AM" src="https://github.com/user-attachments/assets/5964a924-103e-4e7e-9fe4-d409985befca" />
+
 - This command performs three actions:
   - Creates a new IAM role with a trust policy that allows the EKS OIDC provider to assume it
   - Attaches AmazonEKSClusterAutoscalerPolicy to this new role
@@ -191,6 +198,9 @@ annotations:
 helm repo add autoscaler https://kubernetes.github.io/autoscaler
 helm repo update
 ```
+
+<img width="1090" height="154" alt="Screenshot 2026-07-12 at 11 37 39 AM" src="https://github.com/user-attachments/assets/304dbdec-2788-4c8b-9a8b-3e83f516c420" />
+
 - Now, we’ll install the chart. The parameters we pass via --set are crucial for a correct and secure installation.
 ```bash
 helm upgrade --install cluster-autoscaler autoscaler/cluster-autoscaler \
@@ -207,6 +217,9 @@ helm upgrade --install cluster-autoscaler autoscaler/cluster-autoscaler \
   --set extraArgs.skip-nodes-with-local-storage=false \
   --set extraArgs.skip-nodes-with-system-pods=false
 ```
+
+<img width="1308" height="459" alt="Screenshot 2026-07-12 at 11 39 05 AM" src="https://github.com/user-attachments/assets/89172f7e-8c71-4592-ad4e-2856e573a5aa" />
+
 - Let’s highlight the most important settings for an IRSA-based setup:
   - autoDiscovery.clusterName="$CLUSTER_NAME": This tells the autoscaler which owner-ship tag to look for when discovering node groups.
   - rbac.serviceAccount.create=false: This is critical. We are telling the Helm chart, “Do not create a new ServiceAccount.”
@@ -246,10 +259,15 @@ spec:
 ```bash
 kubectl apply -f ./scale-test.yaml
 ```
+<img width="881" height="63" alt="Screenshot 2026-07-12 at 11 39 50 AM" src="https://github.com/user-attachments/assets/651d1abf-ffee-49b9-9d4b-cc89dfe29b71" />
+
 - Confirm that some Pods are pending:
 ```bash
 kubectl get pods -l app=scale-test
 ```
+
+<img width="800" height="418" alt="Screenshot 2026-07-12 at 11 40 05 AM" src="https://github.com/user-attachments/assets/48df1cee-2467-47ec-a4ab-c84fa972ac0b" />
+
 - You should see several Pods with the status pending. This is our trigger. Now, let’s watch the CA’s logs in real time to see its decision-making process.
 ```bash
 # Tail the logs of the Cluster Autoscaler deployment
@@ -264,6 +282,7 @@ kubectl -n kube-system logs -f deploy/cluster-autoscaler-aws-cluster-autoscaler
 ```bash
 kubectl get nodes -w
 ```
+<img width="731" height="527" alt="Screenshot 2026-07-12 at 11 50 08 AM" src="https://github.com/user-attachments/assets/5c7cbefc-38a0-4390-a563-d067a53c5bcf" />
 
 - You will see new nodes appear and transition to the Ready state. Shortly after, the pending scale-test Pods will be scheduled on these new nodes. This completes the verification loop: we created demand, the autoscaler saw the need, it provisioned new supply (nodes), and Kubernetes scheduled the Pods.
 
@@ -271,6 +290,8 @@ kubectl get nodes -w
 ```bash
 kubectl delete -f ./scale-test.yaml
 ```
+
+<img width="874" height="102" alt="Screenshot 2026-07-12 at 11 50 35 AM" src="https://github.com/user-attachments/assets/dface06f-caeb-4afb-bbe5-d30d98a02e2a" />
 
 - After the scale-down-unneeded-time we set in the Helm chart (5 minutes), the CA will identify the now-empty nodes and issue commands to terminate them, scaling the group back down towards its minSize.
 
@@ -312,14 +333,22 @@ kubectl delete -f ./scale-test.yaml
   ```bash
   helm -n kube-system uninstall cluster-autoscaler || true
   ```
+
+<img width="992" height="65" alt="Screenshot 2026-07-12 at 11 51 15 AM" src="https://github.com/user-attachments/assets/73474a22-fe1f-4f52-80c8-d8434f916a25" />
+
   - Delete the EKS cluster and nodes: This is the main cleanup command. It instructs eksctl to deprovision all AWS resources it created for the cluster, including the EKS control plane, the worker nodes in the ASG, IAM roles, and security groups.
   ```bash
   eksctl delete cluster --name "$CLUSTER_NAME" --region "$AWS_REGION"
   ```
+
+<img width="1263" height="149" alt="Screenshot 2026-07-12 at 12 01 57 PM" src="https://github.com/user-attachments/assets/d6c48316-d2b8-4e4b-a372-ca5364c8786b" />
+
   - Remove the IAM policy (optional): After the cluster that used the policy is gone, it’s good practice to remove the now-orphaned IAM policy to keep your AWS account tidy.
   ```bash
   aws iam delete-policy --policy-arn "$CA_POLICY_ARN"
   ```
+
+<img width="970" height="109" alt="Screenshot 2026-07-12 at 12 04 51 PM" src="https://github.com/user-attachments/assets/6127150f-b1e6-4113-a311-c0102aa0d30e" />
 
   ### From practice to theory: understanding the “why” behind the “how”
   - Navigating the detailed setup, deployment, and troubleshooting process reveals both the power and the inherent design philosophy of the CA. It is a robust, mature, and highly effective tool for managing capacity in a predictable way. You have proven you can configure it securely and make it work.
