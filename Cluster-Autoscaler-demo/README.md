@@ -23,7 +23,7 @@
 ```bash
 set -Eeuo pipefail
 # Basic context for our cluster
-export CLUSTER_NAME="interview-ca-cluster"
+export CLUSTER_NAME="demo-cluster"
 export AWS_REGION="us-east-1"
 export AWS_ACCOUNT_ID="$(aws sts get-caller-identity --query Account --output text)"
 ```
